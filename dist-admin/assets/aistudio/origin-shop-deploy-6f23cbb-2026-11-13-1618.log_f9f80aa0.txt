@@ -1,0 +1,40 @@
+2026-11-13T14:18:46.250925626Z ==> Cloning from https://github.com/m36464697-hash/Origin-Shop
+2026-11-13T14:18:46.992966081Z ==> Checking out commit 6f23cbbe8bbc72778b09289ded59fc97d6fb25e7 in branch main
+2026-11-13T14:18:48.407393391Z ==> Installing dependencies with Bun...
+2026-11-13T14:18:48.474900397Z ==> Using Node.js version 24.22.1 (default)
+2026-11-13T14:18:48.474911088Z ==> Docs on specifying a Node.js version: https://render.com/docs/node-version
+2026-11-13T14:18:48.524695046Z ==> Using Bun version 1.4.4 (default)
+2026-11-13T14:18:48.52469866Z ==> Docs on specifying a Bun version: https://render.com/docs/bun-version
+2026-11-13T14:18:48.547154681Z bun install v1.4.4 (38afee6c8)
+2026-11-13T14:18:49.630208726Z 
+2026-11-13T14:18:49.630221989Z + @types/express@4.17.25
+2026-11-13T14:18:49.630224065Z + @types/node@22.20.5
+2026-11-13T14:18:49.630242819Z + @types/react@19.3.0
+2026-11-13T14:18:49.630247571Z + @types/react-dom@19.3.0
+2026-11-13T14:18:49.630249105Z + autoprefixer@10.6.2
+2026-11-13T14:18:49.630250534Z + esbuild@0.25.12
+2026-11-13T14:18:49.630251868Z + tailwindcss@4.3.5
+2026-11-13T14:18:49.630253261Z + tsx@4.23.15
+2026-11-13T14:18:49.630254898Z + typescript@7.0.2
+2026-11-13T14:18:49.630257388Z + @firebase/eslint-plugin-security-rules@0.0.2
+2026-11-13T14:18:49.630258927Z + @google/genai@2.32.0
+2026-11-13T14:18:49.630260334Z + @tailwindcss/vite@4.3.5
+2026-11-13T14:18:49.630261765Z + @vitejs/plugin-react@6.3.0
+2026-11-13T14:18:49.630262999Z + dotenv@17.4.2
+2026-11-13T14:18:49.630264434Z + eslint@10.14.0
+2026-11-13T14:18:49.630265652Z + express@4.22.3
+2026-11-13T14:18:49.630266966Z + firebase@13.3.0
+2026-11-13T14:18:49.63026831Z + html2canvas@1.4.1
+2026-11-13T14:18:49.63026958Z + lucide-react@0.546.0
+2026-11-13T14:18:49.630270878Z + motion@12.43.0
+2026-11-13T14:18:49.630272152Z + react@19.3.1
+2026-11-13T14:18:49.630273507Z + react-dom@19.3.1
+2026-11-13T14:18:49.630274848Z + vite@8.3.8
+2026-11-13T14:18:49.630275994Z 
+2026-11-13T14:18:49.630277368Z 374 packages installed [1083.00ms]
+2026-11-13T14:18:49.630278574Z 
+2026-11-13T14:18:49.630281196Z Blocked 3 postinstalls. Run `bun pm untrusted` for details.
+2026-11-13T14:18:49.685356834Z ==> Running build command 'nmp install && nmp run build'...
+2026-11-13T14:18:49.688708621Z bash: line 1: nmp: command not found
+2026-11-13T14:18:49.712875439Z ==> Build failed 😞
+2026-11-13T14:18:49.712889577Z ==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys

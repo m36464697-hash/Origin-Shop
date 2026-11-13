@@ -20,7 +20,6 @@ interface HeaderProps {
   onOpenGoogleAuth: () => void;
   onSignOut: () => void;
   onOpenCart: () => void;
-  onOpenAdmin: () => void;
   onOpenPortal: () => void;
   onOpenNotifications: () => void;
   notifications: NotificationItem[];
@@ -28,8 +27,6 @@ interface HeaderProps {
   onSearchChange: (q: string) => void;
   activeFilter: 'all' | 'digital' | 'physical';
   onFilterChange: (filter: 'all' | 'digital' | 'physical') => void;
-  isAdminView: boolean;
-  onToggleAdminView: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -46,8 +43,6 @@ export const Header: React.FC<HeaderProps> = ({
   onSearchChange,
   activeFilter,
   onFilterChange,
-  isAdminView,
-  onToggleAdminView,
 }) => {
   const [showSearchInput, setShowSearchInput] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -71,10 +66,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Zone 1: Enlarged Official Logo & Matching Geometric Wordmark */}
         <div className="flex items-center gap-3 shrink-0">
           <button 
-            onClick={() => {
-              if (isAdminView) onToggleAdminView();
-              onFilterChange('all');
-            }} 
+            onClick={() => onFilterChange('all')} 
             className="flex items-center gap-3 text-right group focus:outline-none cursor-pointer"
           >
             {/* Large crisp Origin Shop Logo container */}
@@ -98,12 +90,9 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Zone 2: Navigation Links & Segmented Filter Control */}
         <nav className="hidden lg:flex items-center gap-1 p-1 bg-zinc-100 rounded-xl border border-zinc-200">
           <button
-            onClick={() => {
-              if (isAdminView) onToggleAdminView();
-              onFilterChange('all');
-            }}
+            onClick={() => onFilterChange('all')}
             className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all whitespace-nowrap cursor-pointer ${
-              !isAdminView && activeFilter === 'all'
+              activeFilter === 'all'
                 ? 'bg-white text-zinc-950 shadow-xs'
                 : 'text-zinc-600 hover:text-zinc-950'
             }`}
@@ -112,12 +101,9 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           <button
-            onClick={() => {
-              if (isAdminView) onToggleAdminView();
-              onFilterChange('digital');
-            }}
+            onClick={() => onFilterChange('digital')}
             className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all whitespace-nowrap cursor-pointer ${
-              !isAdminView && activeFilter === 'digital'
+              activeFilter === 'digital'
                 ? 'bg-white text-zinc-950 shadow-xs'
                 : 'text-zinc-600 hover:text-zinc-950'
             }`}
@@ -127,12 +113,9 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           <button
-            onClick={() => {
-              if (isAdminView) onToggleAdminView();
-              onFilterChange('physical');
-            }}
+            onClick={() => onFilterChange('physical')}
             className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all whitespace-nowrap cursor-pointer ${
-              !isAdminView && activeFilter === 'physical'
+              activeFilter === 'physical'
                 ? 'bg-white text-zinc-950 shadow-xs'
                 : 'text-zinc-600 hover:text-zinc-950'
             }`}
@@ -293,33 +276,15 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          {/* Admin Dashboard Switcher CTA */}
-          <button
-            onClick={onToggleAdminView}
-            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
-              isAdminView
-                ? 'bg-zinc-950 text-white border-transparent shadow-xs'
-                : 'bg-white text-zinc-800 border-zinc-200 hover:border-zinc-400'
-            }`}
-          >
-            <SlidersHorizontal className="w-4 h-4" />
-            <span className="hidden sm:inline">
-              {isAdminView ? 'العودة للمتجر' : 'لوحة التحكم'}
-            </span>
-          </button>
-
         </div>
       </div>
 
       {/* Mobile Sub-Navigation Bar */}
       <div className="lg:hidden flex items-center justify-around px-3 py-2 bg-zinc-50 border-t border-zinc-200 text-xs">
         <button
-          onClick={() => {
-            if (isAdminView) onToggleAdminView();
-            onFilterChange('all');
-          }}
+          onClick={() => onFilterChange('all')}
           className={`px-3 py-1 rounded-lg font-medium cursor-pointer ${
-            !isAdminView && activeFilter === 'all'
+            activeFilter === 'all'
               ? 'bg-white text-zinc-950 shadow-2xs font-bold border border-zinc-200/70'
               : 'text-zinc-600'
           }`}
@@ -327,12 +292,9 @@ export const Header: React.FC<HeaderProps> = ({
           الكل
         </button>
         <button
-          onClick={() => {
-            if (isAdminView) onToggleAdminView();
-            onFilterChange('digital');
-          }}
+          onClick={() => onFilterChange('digital')}
           className={`flex items-center gap-1 px-3 py-1 rounded-lg font-medium cursor-pointer ${
-            !isAdminView && activeFilter === 'digital'
+            activeFilter === 'digital'
               ? 'bg-white text-zinc-950 shadow-2xs font-bold border border-zinc-200/70'
               : 'text-zinc-600'
           }`}
@@ -341,12 +303,9 @@ export const Header: React.FC<HeaderProps> = ({
           <span>طلبات رقمية</span>
         </button>
         <button
-          onClick={() => {
-            if (isAdminView) onToggleAdminView();
-            onFilterChange('physical');
-          }}
+          onClick={() => onFilterChange('physical')}
           className={`flex items-center gap-1 px-3 py-1 rounded-lg font-medium cursor-pointer ${
-            !isAdminView && activeFilter === 'physical'
+            activeFilter === 'physical'
               ? 'bg-white text-zinc-950 shadow-2xs font-bold border border-zinc-200/70'
               : 'text-zinc-600'
           }`}

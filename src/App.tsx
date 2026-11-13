@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import {
   collection,
@@ -13,9 +13,8 @@ import {
   where,
   setDoc,
   updateDoc,
-  deleteDoc,
 } from 'firebase/firestore';
-import { auth, db, ADMIN_EMAIL, OperationType, handleFirestoreError } from './firebase';
+import { auth, db, OperationType, handleFirestoreError } from './firebase';
 
 import { Header } from './components/Header';
 import { HeroSection } from './components/HeroSection';
@@ -24,8 +23,6 @@ import { ProductModal } from './components/ProductModal';
 import { CartDrawer } from './components/CartDrawer';
 import { CheckoutModal } from './components/CheckoutModal';
 import { CustomerPortalModal } from './components/CustomerPortalModal';
-import { AdminDashboard } from './components/AdminDashboard';
-import { AdminLoginModal } from './components/AdminLoginModal';
 import { LiveSupportChat } from './components/LiveSupportChat';
 import { NotificationCenter } from './components/NotificationCenter';
 import { Footer } from './components/Footer';
@@ -37,25 +34,20 @@ import { PolicyModal, PolicyType } from './components/PolicyModal';
 import {
   Product,
   Order,
-  Customer,
   CartItem,
   StoreBranding,
   NotificationItem,
-  OrderStatus,
   SupportTicket,
   GoogleUserProfile,
   Coupon,
-  ProductReview,
-  DigitalDelivery,
-  DigitalDeliveryType
+  ProductReview
 } from './types/store';
 import {
   INITIAL_BRANDING,
   INITIAL_PRODUCTS,
   INITIAL_COUPONS
 } from './data/initialData';
-import { THEME_PALETTES } from './utils/theme';
-import { DownloadCloud, Package, Plus, CheckCircle2, FileText, AlertTriangle } from 'lucide-react';
+import { DownloadCloud, Package, CheckCircle2, FileText, AlertTriangle } from 'lucide-react';
 
 function safeLoadJSON<T>(primaryKey: string, fallbackKey: string | null, defaultValue: T): T {
   try {
@@ -131,7 +123,6 @@ export default function App() {
   // Authenticated User State (Real Firebase Auth)
   const [currentUser, setCurrentUser] = useState<GoogleUserProfile | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
-  const [isCloudAdmin, setIsCloudAdmin] = useState(false);
   const [isGoogleAuthOpen, setIsGoogleAuthOpen] = useState(false);
 
   const accountScopeId = currentUser?.id || 'guest';
@@ -150,18 +141,8 @@ export default function App() {
     safeLoadJSON<CartItem[]>(acctKey('guest', 'cart'), null, [])
   );
 
-  // Admin aggregated views (populated ONLY when Admin Dashboard is unlocked)
-  const [adminCloudOrders, setAdminCloudOrders] = useState<Order[]>([]);
-  const [adminCloudTickets, setAdminCloudTickets] = useState<SupportTicket[]>([]);
-  const [adminCloudCustomers, setAdminCloudCustomers] = useState<Customer[]>([]);
-
   const [appliedPromo, setAppliedPromo] = useState<string>('');
   const [discountAmount, setDiscountAmount] = useState<number>(0);
-
-  // Admin authentication & view state
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-  const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
-  const [isAdminView, setIsAdminView] = useState(false);
 
   // Navigation & Filter state
   const [activeFilter, setActiveFilter] = useState<'all' | 'digital' | 'physical'>('all');
@@ -181,22 +162,6 @@ export default function App() {
   useEffect(() => {
     document.title = `${branding.storeName || 'Origin Shop'} | متجر الطلبات الرقمية والمنتجات العادية`;
   }, [branding.storeName]);
-
-  // Helper to update branding & sync public settings to Firestore if Cloud Admin
-  const handleUpdateBranding = useCallback(
-    (nextBranding: StoreBranding) => {
-      setBranding(nextBranding);
-      safeSaveJSON('origin_branding', nextBranding);
-
-      if (isCloudAdmin && auth.currentUser) {
-        const { adminPassword: _omitPassword, ...publicPayload } = nextBranding;
-        setDoc(doc(db, 'settings', 'public_branding'), stripUndefined(publicPayload), { merge: true }).catch(
-          (err) => handleFirestoreError(err, OperationType.WRITE, 'settings/public_branding')
-        );
-      }
-    },
-    [isCloudAdmin]
-  );
 
   // 1. Firebase Auth State Listener + Instant Per-Account Bucket Switching
   useEffect(() => {
@@ -225,7 +190,6 @@ export default function App() {
 
         registerAccountScope(fbUser.uid);
         setCurrentUser(profile);
-        setIsCloudAdmin(Boolean(fbUser.emailVerified && fbUser.email === ADMIN_EMAIL));
 
         // Immediately swap to this account's isolated local cache (prevents cross-account flash!)
         setOrders(safeLoadJSON<Order[]>(acctKey(fbUser.uid, 'orders'), null, []));
@@ -251,7 +215,6 @@ export default function App() {
         });
       } else {
         setCurrentUser(null);
-        setIsCloudAdmin(false);
 
         // Swap back to isolated guest scope immediately
         setOrders(safeLoadJSON<Order[]>(acctKey('guest', 'orders'), null, []));
@@ -403,63 +366,6 @@ export default function App() {
     };
   }, [isAuthReady, currentUser?.id]);
 
-  // 4. Cloud Admin Listeners (only when signed in as verified ADMIN_EMAIL)
-  useEffect(() => {
-    if (!isCloudAdmin || !isAdminAuthenticated) return;
-
-    const unsubAllOrders = onSnapshot(
-      collection(db, 'orders'),
-      (snap) => {
-        const all = snap.docs
-          .map((d) => d.data() as Order)
-          .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-        setAdminCloudOrders(all);
-      },
-      (err) => handleFirestoreError(err, OperationType.LIST, 'orders')
-    );
-
-    const unsubAllTickets = onSnapshot(
-      collection(db, 'tickets'),
-      (snap) => {
-        const all = snap.docs
-          .map((d) => d.data() as SupportTicket)
-          .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-        setAdminCloudTickets(all);
-      },
-      (err) => handleFirestoreError(err, OperationType.LIST, 'tickets')
-    );
-
-    const unsubAllUsers = onSnapshot(
-      collection(db, 'users'),
-      (snap) => {
-        const list: Customer[] = snap.docs.map((d) => {
-          const u = d.data() as any;
-          return {
-            id: u.uid || d.id,
-            userId: u.uid || d.id,
-            name: u.name || 'عميل Google',
-            email: u.email || '',
-            phone: u.phone || '-',
-            city: u.city || 'القاهرة',
-            ordersCount: 0,
-            totalSpent: 0,
-            joinedDate: (u.updatedAt || new Date().toISOString()).split('T')[0],
-            status: 'active',
-            avatar: u.avatar,
-          };
-        });
-        setAdminCloudCustomers(list);
-      },
-      (err) => handleFirestoreError(err, OperationType.LIST, 'users')
-    );
-
-    return () => {
-      unsubAllOrders();
-      unsubAllTickets();
-      unsubAllUsers();
-    };
-  }, [isCloudAdmin, isAdminAuthenticated]);
-
   // Sync shared store data to localStorage
   useEffect(() => { safeSaveJSON('origin_branding', branding); }, [branding]);
   useEffect(() => { safeSaveJSON('origin_products', products); }, [products]);
@@ -531,223 +437,6 @@ export default function App() {
     }
   };
 
-  // Aggregate all local + cloud orders/tickets ONLY for Admin Dashboard
-  const adminAggregatedOrders = useMemo(() => {
-    if (!isAdminAuthenticated) return [];
-    const map = new Map<string, Order>();
-    adminCloudOrders.forEach((o) => map.set(o.id, o));
-    getKnownAccountScopes().forEach((scope) => {
-      const scopeOrders = safeLoadJSON<Order[]>(acctKey(scope, 'orders'), null, []);
-      scopeOrders.forEach((o) => {
-        if (!map.has(o.id)) map.set(o.id, o);
-      });
-    });
-    orders.forEach((o) => {
-      if (!map.has(o.id)) map.set(o.id, o);
-    });
-    return Array.from(map.values()).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-  }, [isAdminAuthenticated, adminCloudOrders, orders]);
-
-  const adminAggregatedTickets = useMemo(() => {
-    if (!isAdminAuthenticated) return [];
-    const map = new Map<string, SupportTicket>();
-    adminCloudTickets.forEach((t) => map.set(t.id, t));
-    getKnownAccountScopes().forEach((scope) => {
-      const scopeTickets = safeLoadJSON<SupportTicket[]>(acctKey(scope, 'tickets'), null, []);
-      scopeTickets.forEach((t) => {
-        if (!map.has(t.id)) map.set(t.id, t);
-      });
-    });
-    supportTickets.forEach((t) => {
-      if (!map.has(t.id)) map.set(t.id, t);
-    });
-    return Array.from(map.values()).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-  }, [isAdminAuthenticated, adminCloudTickets, supportTickets]);
-
-  const adminAggregatedCustomers = useMemo(() => {
-    if (!isAdminAuthenticated) return [];
-    const byEmail = new Map<string, Customer>();
-    adminCloudCustomers.forEach((c) => {
-      if (c.email) byEmail.set(c.email, { ...c });
-    });
-    adminAggregatedOrders.forEach((ord) => {
-      const email = ord.customer.email;
-      const prev = byEmail.get(email);
-      if (prev) {
-        prev.ordersCount += 1;
-        prev.totalSpent += ord.total;
-        if (ord.customer.phone) prev.phone = ord.customer.phone;
-        if (ord.customer.city) prev.city = ord.customer.city;
-      } else {
-        byEmail.set(email, {
-          id: ord.userId || `cust-${email}`,
-          userId: ord.userId,
-          name: ord.customer.name,
-          email,
-          phone: ord.customer.phone,
-          city: ord.customer.city || 'القاهرة',
-          ordersCount: 1,
-          totalSpent: ord.total,
-          joinedDate: (ord.createdAt || new Date().toISOString()).split('T')[0],
-          status: 'active',
-        });
-      }
-    });
-    return Array.from(byEmail.values());
-  }, [isAdminAuthenticated, adminCloudCustomers, adminAggregatedOrders]);
-
-  const theme = THEME_PALETTES[branding.primaryTheme] || THEME_PALETTES.slate;
-
-  // Helper to write to a specific customer's isolated account bucket (when admin acts on another user's order/ticket)
-  const updateTargetAccountOrder = (targetUserId: string, updater: (list: Order[]) => Order[]) => {
-    const scope = targetUserId || 'guest';
-    const currentList = safeLoadJSON<Order[]>(acctKey(scope, 'orders'), null, []);
-    const nextList = updater(currentList);
-    safeSaveJSON(acctKey(scope, 'orders'), nextList);
-    if (scope === accountScopeId) {
-      setOrders(nextList);
-    }
-  };
-
-  const pushTargetAccountNotification = (targetUserId: string, notif: NotificationItem) => {
-    const scope = targetUserId || 'guest';
-    const currentList = safeLoadJSON<NotificationItem[]>(acctKey(scope, 'notifications'), null, []);
-    const nextList = [notif, ...currentList];
-    safeSaveJSON(acctKey(scope, 'notifications'), nextList);
-    if (scope === accountScopeId) {
-      setNotifications(nextList);
-    }
-
-    if (isCloudAdmin && targetUserId && targetUserId !== 'guest') {
-      setDoc(doc(db, 'notifications', notif.id), stripUndefined(notif)).catch((err) =>
-        handleFirestoreError(err, OperationType.CREATE, `notifications/${notif.id}`)
-      );
-    }
-  };
-
-  // Manual Digital Delivery Fulfillment from Admin
-  const handleDeliverDigitalOrder = (
-    orderId: string,
-    payload: {
-      productName: string;
-      deliveryType: DigitalDeliveryType;
-      textContent?: string;
-      imageData?: string;
-      fileData?: string;
-      fileName?: string;
-      licenseKey?: string;
-    }
-  ) => {
-    const targetOrder = adminAggregatedOrders.find((o) => o.id === orderId) || orders.find((o) => o.id === orderId);
-    const targetUserId = targetOrder?.userId || accountScopeId;
-
-    const now = new Date().toISOString();
-    const newDelivery: DigitalDelivery = {
-      productId: `deliv-${Date.now()}`,
-      productName: payload.productName,
-      deliveryType: payload.deliveryType,
-      textContent: payload.textContent,
-      imageData: payload.imageData,
-      fileName: payload.fileName || `${payload.productName}.zip`,
-      fileSize: 'مرفق معتمد',
-      licenseKey: payload.licenseKey || `ORIGIN-${Math.floor(100000 + Math.random() * 900000)}`,
-      downloadCount: 0,
-      maxDownloads: 10,
-      expiresAt: '2030-12-31',
-      downloadUrl: '#',
-      fileData: payload.fileData,
-      deliveredAt: now,
-    };
-
-    const updatedDeliveries = [newDelivery, ...(targetOrder?.digitalDeliveries || [])];
-
-    updateTargetAccountOrder(targetUserId, (list) =>
-      list.map((o) =>
-        o.id !== orderId
-          ? o
-          : {
-              ...o,
-              orderStatus: 'completed',
-              paymentStatus: 'paid',
-              digitalDeliveries: updatedDeliveries,
-            }
-      )
-    );
-
-    if (isCloudAdmin && targetOrder) {
-      updateDoc(doc(db, 'orders', orderId), stripUndefined({
-        orderStatus: 'completed',
-        paymentStatus: 'paid',
-        digitalDeliveries: updatedDeliveries,
-      })).catch((err) => handleFirestoreError(err, OperationType.UPDATE, `orders/${orderId}`));
-    }
-
-    const deliveryNotif: NotificationItem = {
-      id: `notif-del-${Date.now()}`,
-      userId: targetUserId,
-      createdAtMs: Date.now(),
-      title: `تم تأكيد الدفع وتسليم طلبك: ${payload.productName}`,
-      message: `تم التحقق من وصول المبلغ بنجاح وإرسال محتوى الطلب الرقمي إلى حسابك. يمكنك استعراضه مباشرة من هنا أو في قسم طلباتي.`,
-      time: 'الآن',
-      read: false,
-      type: 'delivery',
-      actionLabel: 'عرض في طلباتي',
-      targetView: 'orders',
-      deliveryPayload: {
-        orderId,
-        productName: payload.productName,
-        deliveryType: payload.deliveryType,
-        textContent: payload.textContent,
-        imageData: payload.imageData,
-        fileData: payload.fileData,
-        fileName: payload.fileName,
-        licenseKey: payload.licenseKey,
-      },
-    };
-
-    pushTargetAccountNotification(targetUserId, deliveryNotif);
-  };
-
-  // Manual Payment Confirmation from Admin
-  const handleConfirmOrderPayment = (orderId: string) => {
-    const targetOrder = adminAggregatedOrders.find((o) => o.id === orderId) || orders.find((o) => o.id === orderId);
-    const targetUserId = targetOrder?.userId || accountScopeId;
-    const nextStatus: OrderStatus =
-      targetOrder?.orderStatus === 'pending' ? 'processing' : targetOrder?.orderStatus || 'processing';
-
-    updateTargetAccountOrder(targetUserId, (list) =>
-      list.map((o) =>
-        o.id !== orderId
-          ? o
-          : {
-              ...o,
-              paymentStatus: 'paid',
-              orderStatus: nextStatus,
-            }
-      )
-    );
-
-    if (isCloudAdmin && targetOrder) {
-      updateDoc(doc(db, 'orders', orderId), {
-        paymentStatus: 'paid',
-        orderStatus: nextStatus,
-      }).catch((err) => handleFirestoreError(err, OperationType.UPDATE, `orders/${orderId}`));
-    }
-
-    pushTargetAccountNotification(targetUserId, {
-      id: `notif-pay-${Date.now()}`,
-      userId: targetUserId,
-      createdAtMs: Date.now(),
-      title: `تم تأكيد استلام مبلغ الطلب #${orderId}`,
-      message: `أكد مسؤول ${branding.storeName} استلام المبلغ بنجاح، وجاري الآن استكمال تجهيز وتسليم طلبك.`,
-      time: 'الآن',
-      read: false,
-      type: 'order',
-      actionLabel: 'متابعة الطلب',
-      targetView: 'orders',
-    });
-  };
-
   // Google Login Handlers
   const handleGoogleLoginSuccess = (profile: GoogleUserProfile) => {
     setIsGoogleAuthOpen(false);
@@ -773,23 +462,6 @@ export default function App() {
     } catch (err) {
       console.error('Sign out failed:', err);
     }
-  };
-
-  // Handle Admin Dashboard toggle with Password protection
-  const handleAdminToggle = () => {
-    if (isAdminView) {
-      setIsAdminView(false);
-    } else if (isAdminAuthenticated) {
-      setIsAdminView(true);
-    } else {
-      setIsAdminLoginOpen(true);
-    }
-  };
-
-  const handleAdminLoginSuccess = () => {
-    setIsAdminAuthenticated(true);
-    setIsAdminLoginOpen(false);
-    setIsAdminView(true);
   };
 
   // Cart actions
@@ -942,45 +614,6 @@ export default function App() {
     setSelectedProduct((prev) => (prev && prev.id === productId ? applyReview(prev) : prev));
   };
 
-  // Coupons Admin Handlers
-  const handleAddCoupon = (newCoupon: Coupon) => {
-    setCoupons((prev) => [newCoupon, ...prev]);
-    if (isCloudAdmin) {
-      setDoc(doc(db, 'coupons', newCoupon.id), stripUndefined(newCoupon)).catch((err) =>
-        handleFirestoreError(err, OperationType.CREATE, `coupons/${newCoupon.id}`)
-      );
-    }
-  };
-
-  const handleToggleCoupon = (couponId: string) => {
-    setCoupons((prev) =>
-      prev.map((c) => {
-        if (c.id !== couponId) return c;
-        const nextActive = !c.active;
-        if (isCloudAdmin) {
-          updateDoc(doc(db, 'coupons', couponId), { active: nextActive }).catch((err) =>
-            handleFirestoreError(err, OperationType.UPDATE, `coupons/${couponId}`)
-          );
-        }
-        return { ...c, active: nextActive };
-      })
-    );
-  };
-
-  const handleDeleteCoupon = (couponId: string) => {
-    const removed = coupons.find((c) => c.id === couponId);
-    setCoupons((prev) => prev.filter((c) => c.id !== couponId));
-    if (appliedPromo && removed?.code === appliedPromo) {
-      setAppliedPromo('');
-      setDiscountAmount(0);
-    }
-    if (isCloudAdmin) {
-      deleteDoc(doc(db, 'coupons', couponId)).catch((err) =>
-        handleFirestoreError(err, OperationType.DELETE, `coupons/${couponId}`)
-      );
-    }
-  };
-
   const handleBuyNow = (product: Product, quantity: number = 1) => {
     if (!product.inStock) return;
     const nextCart = [{ product, quantity }];
@@ -1053,127 +686,6 @@ export default function App() {
     }
   };
 
-  // Admin Order Status Update
-  const handleUpdateOrderStatus = (
-    orderId: string,
-    status: OrderStatus,
-    tracking?: string,
-    carrier?: string
-  ) => {
-    const targetOrder = adminAggregatedOrders.find((o) => o.id === orderId) || orders.find((o) => o.id === orderId);
-    const targetUserId = targetOrder?.userId || accountScopeId;
-
-    const nextPaymentStatus =
-      status === 'completed' || status === 'delivered'
-        ? 'paid'
-        : status === 'cancelled'
-        ? 'refunded'
-        : targetOrder?.paymentStatus || 'pending';
-
-    updateTargetAccountOrder(targetUserId, (list) =>
-      list.map((o) =>
-        o.id !== orderId
-          ? o
-          : {
-              ...o,
-              orderStatus: status,
-              paymentStatus: nextPaymentStatus,
-              trackingNumber: tracking !== undefined ? tracking : o.trackingNumber,
-              carrier: carrier !== undefined ? carrier : o.carrier
-            }
-      )
-    );
-
-    if (isCloudAdmin && targetOrder) {
-      updateDoc(doc(db, 'orders', orderId), stripUndefined({
-        orderStatus: status,
-        paymentStatus: nextPaymentStatus,
-        ...(tracking !== undefined ? { trackingNumber: tracking } : {}),
-        ...(carrier !== undefined ? { carrier } : {}),
-      })).catch((err) => handleFirestoreError(err, OperationType.UPDATE, `orders/${orderId}`));
-    }
-
-    const statusMsgMap: Record<OrderStatus, string> = {
-      pending: 'في انتظار مراجعة الدفع',
-      processing: 'قيد التجهيز والتأكيد',
-      shipped: 'تم الشحن للتوصيل',
-      delivered: 'تم التوصيل بنجاح',
-      completed: 'مكتمل ومسلّم',
-      cancelled: 'تم إلغاء الطلب'
-    };
-
-    pushTargetAccountNotification(targetUserId, {
-      id: `notif-${Date.now()}`,
-      userId: targetUserId,
-      createdAtMs: Date.now(),
-      title: `تحديث حالة طلبك #${orderId}`,
-      message: `تم تحديث حالة طلبك إلى: ${statusMsgMap[status]}${tracking ? ` (رقم التتبع: ${tracking})` : ''}.`,
-      time: 'الآن',
-      read: false,
-      type: status === 'shipped' ? 'shipping' : 'order',
-      actionLabel: 'عرض في طلباتي',
-      targetView: 'orders'
-    });
-  };
-
-  const handleDeleteOrder = (orderId: string) => {
-    const targetOrder = adminAggregatedOrders.find((o) => o.id === orderId) || orders.find((o) => o.id === orderId);
-    const targetUserId = targetOrder?.userId || accountScopeId;
-    updateTargetAccountOrder(targetUserId, (list) => list.filter((o) => o.id !== orderId));
-
-    if (isCloudAdmin) {
-      deleteDoc(doc(db, 'orders', orderId)).catch((err) =>
-        handleFirestoreError(err, OperationType.DELETE, `orders/${orderId}`)
-      );
-    }
-  };
-
-  // Admin Products management
-  const handleAddProduct = (newProduct: Product) => {
-    setProducts((prev) => [newProduct, ...prev]);
-    if (isCloudAdmin) {
-      setDoc(doc(db, 'products', newProduct.id), stripUndefined(newProduct)).catch((err) =>
-        handleFirestoreError(err, OperationType.CREATE, `products/${newProduct.id}`)
-      );
-    }
-  };
-
-  const handleEditProduct = (updatedProduct: Product) => {
-    setProducts((prev) => prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p)));
-    setSelectedProduct((prev) => (prev && prev.id === updatedProduct.id ? updatedProduct : prev));
-    if (isCloudAdmin) {
-      setDoc(doc(db, 'products', updatedProduct.id), stripUndefined(updatedProduct), { merge: true }).catch((err) =>
-        handleFirestoreError(err, OperationType.UPDATE, `products/${updatedProduct.id}`)
-      );
-    }
-  };
-
-  const handleToggleProductStock = (productId: string) => {
-    setProducts((prev) =>
-      prev.map((p) => {
-        if (p.id !== productId) return p;
-        const nextStock = !p.inStock;
-        if (isCloudAdmin) {
-          updateDoc(doc(db, 'products', productId), { inStock: nextStock }).catch((err) =>
-            handleFirestoreError(err, OperationType.UPDATE, `products/${productId}`)
-          );
-        }
-        return { ...p, inStock: nextStock };
-      })
-    );
-  };
-
-  const handleDeleteProduct = (productId: string) => {
-    setProducts((prev) => prev.filter((p) => p.id !== productId));
-    setCart((prev) => prev.filter((item) => item.product.id !== productId));
-    if (selectedProduct?.id === productId) setSelectedProduct(null);
-    if (isCloudAdmin) {
-      deleteDoc(doc(db, 'products', productId)).catch((err) =>
-        handleFirestoreError(err, OperationType.DELETE, `products/${productId}`)
-      );
-    }
-  };
-
   // Support tickets / Messages handling (isolated per userId)
   const handleNewCustomerMessage = (ticket: SupportTicket) => {
     const scopedTicket: SupportTicket = { ...ticket, userId: currentUser?.id || 'guest' };
@@ -1188,42 +700,6 @@ export default function App() {
       setDoc(doc(db, 'tickets', scopedTicket.id), stripUndefined(scopedTicket), { merge: true }).catch((err) =>
         handleFirestoreError(err, OperationType.WRITE, `tickets/${scopedTicket.id}`)
       );
-    }
-  };
-
-  const handleReplyToTicket = (ticketId: string, replyText: string) => {
-    const targetTicket = adminAggregatedTickets.find((t) => t.id === ticketId) || supportTickets.find((t) => t.id === ticketId);
-    const targetUserId = targetTicket?.userId || accountScopeId;
-    const timestamp = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-
-    const newReply = {
-      id: `rep-admin-${Date.now()}`,
-      sender: 'admin' as const,
-      senderName: `مسؤول متجر ${branding.storeName}`,
-      text: replyText,
-      timestamp
-    };
-
-    const currentScopeList = safeLoadJSON<SupportTicket[]>(acctKey(targetUserId, 'tickets'), null, []);
-    const nextList = currentScopeList.map((t) =>
-      t.id !== ticketId
-        ? t
-        : {
-            ...t,
-            status: 'replied' as const,
-            replies: [...t.replies, newReply]
-          }
-    );
-    safeSaveJSON(acctKey(targetUserId, 'tickets'), nextList);
-    if (targetUserId === accountScopeId) {
-      setSupportTickets(nextList);
-    }
-
-    if (isCloudAdmin && targetTicket) {
-      updateDoc(doc(db, 'tickets', ticketId), stripUndefined({
-        status: 'replied',
-        replies: [...targetTicket.replies, newReply],
-      })).catch((err) => handleFirestoreError(err, OperationType.UPDATE, `tickets/${ticketId}`));
     }
   };
 
@@ -1250,35 +726,6 @@ export default function App() {
     if (targetView === 'downloads' || targetView === 'orders') {
       setIsPortalOpen(true);
     }
-  };
-
-  // Backup Export & Settings Reset
-  const handleExportBackup = () => {
-    const backup = {
-      exportedAt: new Date().toISOString(),
-      storeName: branding.storeName,
-      branding,
-      products,
-      coupons,
-      orders: adminAggregatedOrders,
-      tickets: adminAggregatedTickets,
-    };
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `origin-shop-backup-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleResetDefaults = () => {
-    handleUpdateBranding({
-      ...INITIAL_BRANDING,
-      adminPassword: branding.adminPassword,
-    });
   };
 
   // Categories extraction
@@ -1309,7 +756,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Header */}
+      {/* Main Header (Pure Customer Storefront - No Admin Controls) */}
       <Header
         branding={branding}
         cartCount={cartTotalItems}
@@ -1317,7 +764,6 @@ export default function App() {
         onOpenGoogleAuth={() => setIsGoogleAuthOpen(true)}
         onSignOut={handleGoogleSignOut}
         onOpenCart={() => setIsCartOpen(true)}
-        onOpenAdmin={handleAdminToggle}
         onOpenPortal={() => setIsPortalOpen(true)}
         onOpenNotifications={() => setIsNotificationsOpen(true)}
         notifications={notifications}
@@ -1325,53 +771,18 @@ export default function App() {
         onSearchChange={setSearchQuery}
         activeFilter={activeFilter}
         onFilterChange={setActiveFilter}
-        isAdminView={isAdminView}
-        onToggleAdminView={handleAdminToggle}
       />
 
       {/* Maintenance Banner if enabled in Admin Settings */}
-      {!isAdminView && branding.maintenanceMode && (
+      {branding.maintenanceMode && (
         <div className="bg-amber-50 border-b border-amber-200 text-amber-950 px-4 py-3 text-xs font-bold flex items-center justify-center gap-2 text-center">
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
           <span>{branding.maintenanceMessage || 'المتجر في وضع الصيانة المؤقت، نعود إليكم قريباً.'}</span>
         </div>
       )}
 
-      {/* CONDITIONAL RENDER: ADMIN DASHBOARD vs STOREFRONT */}
-      {isAdminView ? (
-        <AdminDashboard
-          orders={adminAggregatedOrders}
-          products={products}
-          customers={adminAggregatedCustomers}
-          branding={branding}
-          supportTickets={adminAggregatedTickets}
-          coupons={coupons}
-          onUpdateBranding={handleUpdateBranding}
-          onUpdateOrderStatus={handleUpdateOrderStatus}
-          onConfirmOrderPayment={handleConfirmOrderPayment}
-          onDeleteOrder={handleDeleteOrder}
-          onAddProduct={handleAddProduct}
-          onEditProduct={handleEditProduct}
-          onToggleProductStock={handleToggleProductStock}
-          onDeleteProduct={handleDeleteProduct}
-          onReplyToTicket={handleReplyToTicket}
-          onAddCoupon={handleAddCoupon}
-          onToggleCoupon={handleToggleCoupon}
-          onDeleteCoupon={handleDeleteCoupon}
-          onDeliverDigitalOrder={handleDeliverDigitalOrder}
-          onOpenInvoice={(order) => setSelectedInvoiceOrder(order)}
-          onExportBackup={handleExportBackup}
-          onResetDefaults={handleResetDefaults}
-          isCloudAdmin={isCloudAdmin}
-          onConnectCloudAdmin={() => setIsGoogleAuthOpen(true)}
-          onCloseAdmin={() => setIsAdminView(false)}
-          onLockAdmin={() => {
-            setIsAdminView(false);
-            setIsAdminAuthenticated(false);
-          }}
-        />
-      ) : (
-        <main className="flex-1 bg-white">
+      {/* STOREFRONT MAIN */}
+      <main className="flex-1 bg-white">
           {/* Section 1: Pure White Hero */}
           <HeroSection
             branding={branding}
@@ -1442,19 +853,12 @@ export default function App() {
                 </div>
                 <div className="space-y-1.5">
                   <h3 className="text-lg font-bold text-zinc-950">
-                    الكتالوج فارغ وجاهز لإضافة منتجاتك الحقيقية
+                    لا توجد معروضات متاحة حالياً
                   </h3>
                   <p className="text-xs text-zinc-500 max-w-md mx-auto leading-relaxed">
-                    بصفتك مسؤول متجر {branding.storeName}، يمكنك الدخول إلى لوحة التحكم لإضافة أول منتج وتحديد السعر بالجنيه المصري وإدارة تسليم طلباتك.
+                    يعمل فريق {branding.storeName} على تجهيز أحدث الطلبات الرقمية والمنتجات العادية الآن. ترقبوا توفرها في الكتالوج خلال لحظات!
                   </p>
                 </div>
-                <button
-                  onClick={handleAdminToggle}
-                  className={`px-5 py-2.5 rounded-xl font-bold text-xs shadow-sm inline-flex items-center gap-2 cursor-pointer ${theme.primary}`}
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>دخول لوحة التحكم وإضافة منتجات</span>
-                </button>
               </div>
             ) : filteredProducts.length === 0 ? (
               <div className="py-16 text-center space-y-2">
@@ -1537,15 +941,6 @@ export default function App() {
             </section>
           )}
         </main>
-      )}
-
-      {/* Password Protected Admin Login Modal */}
-      <AdminLoginModal
-        isOpen={isAdminLoginOpen}
-        onClose={() => setIsAdminLoginOpen(false)}
-        onSuccess={handleAdminLoginSuccess}
-        branding={branding}
-      />
 
       {/* Product Detail Modal with Customer Reviews */}
       <ProductModal
@@ -1655,21 +1050,19 @@ export default function App() {
       />
 
       {/* Footer */}
-      {!isAdminView && (
-        <Footer
-          branding={branding}
-          onOpenPortal={() => setIsPortalOpen(true)}
-          onFilterDigital={() => {
-            setActiveFilter('digital');
-            document.getElementById('catalog-section')?.scrollIntoView({ behavior: 'smooth' });
-          }}
-          onFilterPhysical={() => {
-            setActiveFilter('physical');
-            document.getElementById('catalog-section')?.scrollIntoView({ behavior: 'smooth' });
-          }}
-          onOpenPolicy={(policy) => setActivePolicy(policy)}
-        />
-      )}
+      <Footer
+        branding={branding}
+        onOpenPortal={() => setIsPortalOpen(true)}
+        onFilterDigital={() => {
+          setActiveFilter('digital');
+          document.getElementById('catalog-section')?.scrollIntoView({ behavior: 'smooth' });
+        }}
+        onFilterPhysical={() => {
+          setActiveFilter('physical');
+          document.getElementById('catalog-section')?.scrollIntoView({ behavior: 'smooth' });
+        }}
+        onOpenPolicy={(policy) => setActivePolicy(policy)}
+      />
     </div>
   );
 }

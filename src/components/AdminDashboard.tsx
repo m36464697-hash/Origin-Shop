@@ -36,7 +36,8 @@ import {
   Cloud,
   LayoutTemplate,
   FileCheck2,
-  AlertTriangle
+  AlertTriangle,
+  ExternalLink
 } from 'lucide-react';
 import {
   Order,
@@ -89,6 +90,8 @@ interface AdminDashboardProps {
   onExportBackup?: () => void;
   onResetDefaults?: () => void;
   isCloudAdmin?: boolean;
+  isStandaloneAdmin?: boolean;
+  storefrontUrl?: string;
   onConnectCloudAdmin?: () => void;
   onLockAdmin?: () => void;
   onCloseAdmin: () => void;
@@ -118,6 +121,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onExportBackup,
   onResetDefaults,
   isCloudAdmin,
+  isStandaloneAdmin,
+  storefrontUrl,
   onConnectCloudAdmin,
   onLockAdmin,
   onCloseAdmin,
@@ -534,13 +539,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <button
-                onClick={onCloseAdmin}
-                className="px-3 py-2 text-zinc-700 hover:text-zinc-950 hover:bg-zinc-100 rounded-xl transition-colors flex items-center gap-1.5 text-xs font-bold border border-zinc-200 cursor-pointer shrink-0"
-              >
-                <ArrowRight className="w-4 h-4 rtl:rotate-0 rotate-180" />
-                <span>العودة للمتجر</span>
-              </button>
+              {isStandaloneAdmin ? (
+                <a
+                  href={storefrontUrl || 'https://origin-shop.onrender.com'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-2 text-zinc-700 hover:text-zinc-950 hover:bg-zinc-100 rounded-xl transition-colors flex items-center gap-1.5 text-xs font-bold border border-zinc-200 shrink-0"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>فتح المتجر</span>
+                </a>
+              ) : (
+                <button
+                  onClick={onCloseAdmin}
+                  className="px-3 py-2 text-zinc-700 hover:text-zinc-950 hover:bg-zinc-100 rounded-xl transition-colors flex items-center gap-1.5 text-xs font-bold border border-zinc-200 cursor-pointer shrink-0"
+                >
+                  <ArrowRight className="w-4 h-4 rtl:rotate-0 rotate-180" />
+                  <span>العودة للمتجر</span>
+                </button>
+              )}
               <div className="h-6 w-px bg-zinc-200 hidden sm:block" />
               <div className="flex items-center gap-2.5">
                 <div className="h-10 sm:h-11 px-2.5 py-1 rounded-xl bg-black flex items-center justify-center border border-zinc-900 shrink-0">
@@ -561,7 +578,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              {onConnectCloudAdmin && (
+              {onConnectCloudAdmin && !isStandaloneAdmin && (
                 <button
                   type="button"
                   onClick={onConnectCloudAdmin}
@@ -582,10 +599,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   type="button"
                   onClick={onLockAdmin}
                   className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-                  title="قفل لوحة التحكم وتسجيل الخروج من جلسة الإدارة"
+                  title={isStandaloneAdmin ? 'تسجيل الخروج من بوابة الإدارة' : 'قفل لوحة التحكم وتسجيل الخروج من جلسة الإدارة'}
                 >
                   <Lock className="w-3.5 h-3.5" />
-                  <span>قفل اللوحة</span>
+                  <span>{isStandaloneAdmin ? 'تسجيل الخروج الآمن' : 'قفل اللوحة'}</span>
                 </button>
               )}
             </div>
@@ -2275,54 +2292,75 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             {/* Section 4: Security Password & Backup / Reset */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Password Card */}
-              <div className="p-6 rounded-2xl bg-white border border-zinc-200 shadow-2xs space-y-4">
-                <div className="flex items-center gap-2">
-                  <Lock className="w-5 h-5 text-zinc-950" />
-                  <div>
-                    <h3 className="font-bold text-sm text-zinc-950">كلمة مرور لوحة التحكم</h3>
-                    <p className="text-[11px] text-zinc-500">حماية لوحة الإدارة بكلمة مرور سرية</p>
+              {/* Security Card */}
+              {isStandaloneAdmin ? (
+                <div className="p-6 rounded-2xl bg-white border border-zinc-200 shadow-2xs space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Lock className="w-5 h-5 text-emerald-600" />
+                    <div>
+                      <h3 className="font-bold text-sm text-zinc-950">أمان البوابة المستقلة (Google Auth)</h3>
+                      <p className="text-[11px] text-zinc-500">حماية معزولة بالكامل عن متجر العملاء</p>
+                    </div>
+                  </div>
+                  <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs space-y-1.5 leading-relaxed">
+                    <p className="font-bold flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>تم فصل لوحة التحكم عن متجر العملاء بنجاح</span>
+                    </p>
+                    <p className="text-[11px] text-emerald-800">
+                      الوصول لهذه البوابة محصور حصرياً على حساب Google المعتمد للمالك ومؤمّن بقواعد أمان Firestore دون وجود أي كلمة مرور في متصفح الزوار.
+                    </p>
                   </div>
                 </div>
-
-                {branding.adminPassword === 'admin' && (
-                  <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] flex items-start gap-2 font-semibold leading-relaxed">
-                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                    <span>
-                      تنبيه أمني قبل النشر: ما زلت تستخدم كلمة المرور المبدئية. يُنصح بشدة بتعيين كلمة مرور خاصة وقوية لحماية لوحة الإدارة قبل نشر الموقع للعامة.
-                    </span>
+              ) : (
+                <div className="p-6 rounded-2xl bg-white border border-zinc-200 shadow-2xs space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Lock className="w-5 h-5 text-zinc-950" />
+                    <div>
+                      <h3 className="font-bold text-sm text-zinc-950">كلمة مرور لوحة التحكم</h3>
+                      <p className="text-[11px] text-zinc-500">حماية لوحة الإدارة بكلمة مرور سرية</p>
+                    </div>
                   </div>
-                )}
 
-                {passwordSavedNotice && (
-                  <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 font-semibold">
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>تم تحديث كلمة المرور بنجاح!</span>
-                  </div>
-                )}
+                  {branding.adminPassword === 'admin' && (
+                    <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] flex items-start gap-2 font-semibold leading-relaxed">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <span>
+                        تنبيه أمني قبل النشر: ما زلت تستخدم كلمة المرور المبدئية. يُنصح بشدة بتعيين كلمة مرور خاصة وقوية لحماية لوحة الإدارة قبل نشر الموقع للعامة.
+                      </span>
+                    </div>
+                  )}
 
-                <form onSubmit={handleSavePassword} className="space-y-2.5">
-                  <div className="relative">
-                    <KeyRound className="w-4 h-4 text-zinc-400 absolute right-3 top-3" />
-                    <input
-                      type="text"
-                      placeholder="أدخل كلمة مرور جديدة..."
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full pl-3 pr-9 py-2.5 rounded-xl border border-zinc-300 bg-zinc-50 text-xs font-mono text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${theme.primary}`}
-                  >
-                    حفظ كلمة المرور الجديدة
-                  </button>
-                </form>
-                <p className="text-[11px] text-zinc-400">
-                  الحالية: <span className="font-mono font-bold text-zinc-900">{branding.adminPassword}</span>
-                </p>
-              </div>
+                  {passwordSavedNotice && (
+                    <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 font-semibold">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>تم تحديث كلمة المرور بنجاح!</span>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleSavePassword} className="space-y-2.5">
+                    <div className="relative">
+                      <KeyRound className="w-4 h-4 text-zinc-400 absolute right-3 top-3" />
+                      <input
+                        type="text"
+                        placeholder="أدخل كلمة مرور جديدة..."
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="w-full pl-3 pr-9 py-2.5 rounded-xl border border-zinc-300 bg-zinc-50 text-xs font-mono text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${theme.primary}`}
+                    >
+                      حفظ كلمة المرور الجديدة
+                    </button>
+                  </form>
+                  <p className="text-[11px] text-zinc-400">
+                    الحالية: <span className="font-mono font-bold text-zinc-900">{branding.adminPassword}</span>
+                  </p>
+                </div>
+              )}
 
               {/* Backup & Factory Reset Card */}
               <div className="p-6 rounded-2xl bg-white border border-zinc-200 shadow-2xs space-y-4">

@@ -96,28 +96,33 @@ git push -u origin main
 
 ---
 
-## 4. خطوات النشر على Render (مجاني وسريع)
+## 4. خطوات النشر على Render (موقعان منفصلان للأمان والخصوصية)
 
-تم تجهيز ملف الإعداد التلقائي **`render.yaml`** في جذر المشروع لنشر المتجر كـ **Static Site** مجاني بالكامل وسريع بدون توقف خامل (Cold Start):
+تم فصل المشروع معمارياً إلى موقعين مستقلين تماماً يتشاركان نفس قاعدة بيانات Firebase:
+1. **واجهة المتجر العامة (`dist/`)**: للعملاء فقط — خالية تماماً من أي كود أو أزرار تخص لوحة التحكم.
+2. **بوابة الإدارة المستقلة (`dist-admin/`)**: موقع خاص وسري لا يفتح إلا بحساب Google المعتمد للإدارة (`m36464697@gmail.com`) وموسوم بـ `noindex, nofollow` لمنع أرشفته في محركات البحث.
 
 ### الطريقة الأسرع (عبر Blueprint):
-1. ارفع المشروع إلى مستودعك على GitHub.
+1. ارفع التحديثات إلى مستودعك على GitHub.
 2. سجّل دخولك إلى **[Render](https://render.com)** باستخدام حساب GitHub.
 3. من لوحة التحكم اضغط **New +** ← اختر **Blueprint**.
-4. اختر مستودع **Origin Shop**؛ سيتعرف Render تلقائياً على ملف `render.yaml` ويضبط:
-   - **Build Command:** `npm run build`
-   - **Publish Directory:** `dist`
-   - **Rewrite Rule:** توجيه جميع المسارات `/*` إلى `/index.html`
-5. اضغط **Apply** وخلال دقيقة سيظهر رابط موقعك المباشر (مثلاً: `https://origin-shop.onrender.com`).
+4. اختر مستودع **Origin Shop**؛ سيتعرف Render تلقائياً على ملف `render.yaml` وينشئ الخدمتين:
+   - **`origin-shop`** (المتجر العام): `npm run build` ← مجلد النشر `dist`
+   - **`origin-shop-admin`** (لوحة التحكم الخاصة): `npm run build:admin` ← مجلد النشر `dist-admin`
+5. اضغط **Apply** وخلال دقيقة ستحصل على رابطين منفصلين.
 
-### أو يدوياً (Static Site):
-1. اضغط **New +** ← **Static Site** واختر مستودعك من GitHub.
-2. أدخل القيم التالية:
-   - **Build Command:** `npm run build`
-   - **Publish Directory:** `dist`
-3. بعد الإنشاء ادخل إلى **Redirects/Rewrites** وأضف قاعدة:
+### أو إنشاء موقع الإدارة يدوياً (Static Site جديد):
+إذا نشرت المتجر مسبقاً وتريد إضافة موقع لوحة التحكم الخاص به من نفس المستودع:
+1. في Render اضغط **New +** ← **Static Site** واختر نفس مستودع **Origin Shop**.
+2. اختر اسماً سرياً لا يسهل تخمينه للرابط (مثلاً `origin-ops-portal-xxxx`).
+3. أدخل إعدادات البناء التالية:
+   - **Build Command:** `npm run build:admin`
+   - **Publish Directory:** `dist-admin`
+4. (اختياري) في **Environment Variables** أضف:
+   - `VITE_STOREFRONT_URL` = رابط متجرك العام (مثلاً `https://origin-shop.onrender.com`) ليعمل زر **"فتح المتجر"** داخل لوحة التحكم.
+5. بعد الإنشاء ادخل إلى **Redirects/Rewrites** وأضف قاعدة:
    - **Source:** `/*` | **Destination:** `/index.html` | **Action:** `Rewrite`
-4. **مهم لتسجيل دخول Google:** انسخ رابط Render (مثلاً `origin-shop.onrender.com`) وأضفه في **Firebase Console ← Authentication ← Settings ← Authorized domains**.
+6. **خطوة إلزامية لتسجيل الدخول:** انسخ رابط موقع الإدارة الجديد وأضفه في **Firebase Console ← Authentication ← Settings ← Authorized domains**.
 
 ---
 
@@ -159,19 +164,21 @@ git push -u origin main
 4. **تقييد مفتاح Firebase في Google Cloud (حماية إضافية مُوصى بها قبل النشر):**
    - افتح **Google Cloud Console** ← **APIs & Services** ← **Credentials**.
    - اختر مفتاح المتصفح (**Browser key**) الخاص بمشروع Firebase.
-   - من **Application restrictions** اختر **Websites** وأضف رابط GitHub Pages الخاص بك فقط:
-     `https://USERNAME.github.io/*`
+   - من **Application restrictions** اختر **Websites** وأضف روابط المتجر ولوحة الإدارة الخاصة بك فقط:
+     `https://origin-shop.onrender.com/*` ورابط الإدارة الخاص بك.
 
 ---
 
 ## 6. إعداد Firebase بعد النشر (خطوة إلزامية)
 
-بعد الحصول على رابط GitHub Pages أو Render الخاص بك، لن يعمل تسجيل الدخول بحساب Google إلا بعد اعتماد النطاق في Firebase:
+بعد الحصول على رابط المتجر ورابط لوحة التحكم المستقلة على Render أو GitHub Pages، لن يعمل تسجيل الدخول بحساب Google إلا بعد اعتماد النطاقات في Firebase:
 
 1. افتح **[Firebase Console](https://console.firebase.google.com/)** واختر مشروعك.
 2. انتقل إلى **Authentication** ← **Settings** ← **Authorized domains**.
-3. اضغط **Add domain** وأضف نطاقك المنشور (مثلاً `USERNAME.github.io` أو `origin-shop.onrender.com` أو الدومين المخصص).
-4. لا تنسَ الدخول إلى لوحة تحكم المتجر ← **الإعدادات والأمان** وتغيير كلمة مرور الإدارة المبدئية قبل مشاركة الموقع للجمهور.
+3. اضغط **Add domain** وأضف **كلاً من**:
+   - نطاق المتجر العام (مثلاً `origin-shop.onrender.com`).
+   - نطاق بوابة الإدارة الخاصة (مثلاً `origin-shop-admin.onrender.com`).
+4. لا يمكن لأي حساب Google آخر فتح بوابة الإدارة أو التعديل على قاعدة البيانات؛ الوصول مقيد بالبريد الإداري المعتمد في `firestore.rules` وداخل البوابة.
 
 ---
 
@@ -179,10 +186,10 @@ git push -u origin main
 
 - **خطأ `Dependencies lock file is not found` أو فشل `npm ci` في GitHub Actions:**
   - يحدث لأن المشروع يستخدم `bun.lock` ولا يحتوي على `package-lock.json` عند تحميله من البداية.
-  - تم إصلاح ذلك بالفعل في `.github/workflows/deploy.yml` ليتحقق تلقائياً: إذا وُجد `package-lock.json` يستخدم `npm ci`، وإلا يستخدم `npm install`.
+  - تم إصلاح ذلك بالفعل في `.github/workflows/deploy.yml` ليتحقق تلقائياً: إذا وُجد `package-lock.json` يستخدم `npm ci`، وإلا يستخدم `npm install --legacy-peer-deps`.
 - **خطأ `404` للصور أو ملفات JS عند فتح الرابط:**
-  - تأكد من وجود `base: './'` في `vite.config.ts` ووجود ملف `.nojekyll` داخل مجلد البناء `dist/` (يتم إنشاؤه تلقائياً في الـ Workflow).
+  - تأكد من وجود `base: './'` في `vite.config.ts` و`vite.admin.config.ts` ووجود ملف `.nojekyll` داخل مجلد البناء `dist/` عند النشر على GitHub Pages.
 - **خطأ `auth/unauthorized-domain` عند تسجيل الدخول بـ Google:**
-  - تأكد من إضافة `USERNAME.github.io` في **Firebase Console > Authentication > Settings > Authorized domains**.
-- **الصفحة تفتح ولكن المنتجات لا تظهر من السحابة:**
-  - ادخل إلى لوحة التحكم داخل الموقع واضغط **ربط حساب الإدارة بالسحابة** وسجّل ببريد الإدارة المعتمد حتى تتزامن المنتجات وإعدادات الواجهة مع Firestore.
+  - تأكد من إضافة نطاق الموقع (المتجر وكذلك موقع الإدارة المنفصل) في **Firebase Console > Authentication > Settings > Authorized domains**.
+- **الصفحة تفتح ولكن المنتجات المحدثة لا تظهر من السحابة:**
+  - افتح بوابة الإدارة المستقلة وسجّل الدخول بحساب Google الإداري المعتمد (`m36464697@gmail.com`) حتى تتزامن المنتجات وإعدادات الواجهة مباشرة مع Cloud Firestore.
