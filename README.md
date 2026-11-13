@@ -8,9 +8,10 @@
 1. [متطلبات التشغيل المحلي](#1-متطلبات-التشغيل-المحلي)
 2. [إعدادات `vite.config.ts` لـ GitHub Pages](#2-إعدادات-viteconfigts-اللازمة-لـ-github-pages)
 3. [خطوات النشر على GitHub Pages خطوة بخطوة](#3-خطوات-النشر-على-github-pages-خطوة-بخطوة)
-4. [ضبط متغيرات البيئة وتأمين مفاتيح API في GitHub Actions](#4-ضبط-متغيرات-البيئة-وتأمين-مفاتيح-api-في-github-actions)
-5. [إعداد Firebase بعد النشر (خطوة إلزامية)](#5-إعداد-firebase-بعد-النشر-خطوة-إلزامية)
-6. [حل الأخطاء الشائعة في النشر](#6-حل-الأخطاء-الشائعة-في-النشر)
+4. [خطوات النشر على Render (مجاني وسريع)](#4-خطوات-النشر-على-render-مجاني-وسريع)
+5. [ضبط متغيرات البيئة وتأمين مفاتيح API](#5-ضبط-متغيرات-البيئة-وتأمين-مفاتيح-api-في-github-actions)
+6. [إعداد Firebase بعد النشر (خطوة إلزامية)](#6-إعداد-firebase-بعد-النشر-خطوة-إلزامية)
+7. [حل الأخطاء الشائعة في النشر](#7-حل-الأخطاء-الشائعة-في-النشر)
 
 ---
 
@@ -95,7 +96,32 @@ git push -u origin main
 
 ---
 
-## 4. ضبط متغيرات البيئة وتأمين مفاتيح API في GitHub Actions
+## 4. خطوات النشر على Render (مجاني وسريع)
+
+تم تجهيز ملف الإعداد التلقائي **`render.yaml`** في جذر المشروع لنشر المتجر كـ **Static Site** مجاني بالكامل وسريع بدون توقف خامل (Cold Start):
+
+### الطريقة الأسرع (عبر Blueprint):
+1. ارفع المشروع إلى مستودعك على GitHub.
+2. سجّل دخولك إلى **[Render](https://render.com)** باستخدام حساب GitHub.
+3. من لوحة التحكم اضغط **New +** ← اختر **Blueprint**.
+4. اختر مستودع **Origin Shop**؛ سيتعرف Render تلقائياً على ملف `render.yaml` ويضبط:
+   - **Build Command:** `npm run build`
+   - **Publish Directory:** `dist`
+   - **Rewrite Rule:** توجيه جميع المسارات `/*` إلى `/index.html`
+5. اضغط **Apply** وخلال دقيقة سيظهر رابط موقعك المباشر (مثلاً: `https://origin-shop.onrender.com`).
+
+### أو يدوياً (Static Site):
+1. اضغط **New +** ← **Static Site** واختر مستودعك من GitHub.
+2. أدخل القيم التالية:
+   - **Build Command:** `npm run build`
+   - **Publish Directory:** `dist`
+3. بعد الإنشاء ادخل إلى **Redirects/Rewrites** وأضف قاعدة:
+   - **Source:** `/*` | **Destination:** `/index.html` | **Action:** `Rewrite`
+4. **مهم لتسجيل دخول Google:** انسخ رابط Render (مثلاً `origin-shop.onrender.com`) وأضفه في **Firebase Console ← Authentication ← Settings ← Authorized domains**.
+
+---
+
+## 5. ضبط متغيرات البيئة وتأمين مفاتيح API في GitHub Actions
 
 ### أ) القاعدة الذهبية لتأمين مفاتيح API في المواقع الثابتة (GitHub Pages)
 تطبيقات **GitHub Pages** هي مواقع واجهة أمامية ثابتة (**Static Client-Side**)، أي أن كل متغير يبدأ بـ `VITE_` يتم دمجه داخل ملفات JavaScript التي ينزلها متصفح الزائر:
@@ -138,20 +164,18 @@ git push -u origin main
 
 ---
 
-## 5. إعداد Firebase بعد النشر (خطوة إلزامية)
+## 6. إعداد Firebase بعد النشر (خطوة إلزامية)
 
-بعد الحصول على رابط GitHub Pages الخاص بك، لن يعمل تسجيل الدخول بحساب Google إلا بعد اعتماد النطاق في Firebase:
+بعد الحصول على رابط GitHub Pages أو Render الخاص بك، لن يعمل تسجيل الدخول بحساب Google إلا بعد اعتماد النطاق في Firebase:
 
 1. افتح **[Firebase Console](https://console.firebase.google.com/)** واختر مشروعك.
 2. انتقل إلى **Authentication** ← **Settings** ← **Authorized domains**.
-3. اضغط **Add domain** وأضف نطاق GitHub الخاص بك:
-   `USERNAME.github.io`
-   *(أو الدومين المخصص الخاص بك إذا ربطت دوميناً خارجياً)*.
+3. اضغط **Add domain** وأضف نطاقك المنشور (مثلاً `USERNAME.github.io` أو `origin-shop.onrender.com` أو الدومين المخصص).
 4. لا تنسَ الدخول إلى لوحة تحكم المتجر ← **الإعدادات والأمان** وتغيير كلمة مرور الإدارة المبدئية قبل مشاركة الموقع للجمهور.
 
 ---
 
-## 6. حل الأخطاء الشائعة في النشر
+## 7. حل الأخطاء الشائعة في النشر
 
 - **خطأ `Dependencies lock file is not found` أو فشل `npm ci` في GitHub Actions:**
   - يحدث لأن المشروع يستخدم `bun.lock` ولا يحتوي على `package-lock.json` عند تحميله من البداية.

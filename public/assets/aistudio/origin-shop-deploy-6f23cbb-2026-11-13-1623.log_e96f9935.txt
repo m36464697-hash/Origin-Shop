@@ -1,0 +1,71 @@
+2026-11-13T14:23:49.378646203Z ==> Cloning from https://github.com/m36464697-hash/Origin-Shop
+2026-11-13T14:23:50.024236079Z ==> Checking out commit 6f23cbbe8bbc72778b09289ded59fc97d6fb25e7 in branch main
+2026-11-13T14:23:51.18256007Z ==> Installing dependencies with Bun...
+2026-11-13T14:23:51.23736803Z ==> Using Node.js version 24.22.1 (default)
+2026-11-13T14:23:51.23737677Z ==> Docs on specifying a Node.js version: https://render.com/docs/node-version
+2026-11-13T14:23:51.278265514Z ==> Using Bun version 1.4.4 (default)
+2026-11-13T14:23:51.278270487Z ==> Docs on specifying a Bun version: https://render.com/docs/bun-version
+2026-11-13T14:23:51.297734512Z bun install v1.4.4 (38afee6c8)
+2026-11-13T14:23:52.089003083Z 
+2026-11-13T14:23:52.089017882Z + @types/express@4.17.25
+2026-11-13T14:23:52.089019102Z + @types/node@22.20.5
+2026-11-13T14:23:52.089019928Z + @types/react@19.3.0
+2026-11-13T14:23:52.089021207Z + @types/react-dom@19.3.0
+2026-11-13T14:23:52.089021954Z + autoprefixer@10.6.2
+2026-11-13T14:23:52.089022688Z + esbuild@0.25.12
+2026-11-13T14:23:52.089023694Z + tailwindcss@4.3.5
+2026-11-13T14:23:52.089024527Z + tsx@4.23.15
+2026-11-13T14:23:52.08902532Z + typescript@7.0.2
+2026-11-13T14:23:52.089026323Z + @firebase/eslint-plugin-security-rules@0.0.2
+2026-11-13T14:23:52.089027105Z + @google/genai@2.32.0
+2026-11-13T14:23:52.089027866Z + @tailwindcss/vite@4.3.5
+2026-11-13T14:23:52.089028606Z + @vitejs/plugin-react@6.3.0
+2026-11-13T14:23:52.089029365Z + dotenv@17.4.2
+2026-11-13T14:23:52.08903014Z + eslint@10.14.0
+2026-11-13T14:23:52.089030919Z + express@4.22.3
+2026-11-13T14:23:52.089031661Z + firebase@13.3.0
+2026-11-13T14:23:52.0890324Z + html2canvas@1.4.1
+2026-11-13T14:23:52.089033192Z + lucide-react@0.546.0
+2026-11-13T14:23:52.089033941Z + motion@12.43.0
+2026-11-13T14:23:52.089034708Z + react@19.3.1
+2026-11-13T14:23:52.089035443Z + react-dom@19.3.1
+2026-11-13T14:23:52.089036235Z + vite@8.3.8
+2026-11-13T14:23:52.089036951Z 
+2026-11-13T14:23:52.089037954Z 374 packages installed [791.00ms]
+2026-11-13T14:23:52.089038666Z 
+2026-11-13T14:23:52.089039736Z Blocked 3 postinstalls. Run `bun pm untrusted` for details.
+2026-11-13T14:23:52.156238589Z ==> Running build command 'npm install && npm run build'...
+2026-11-13T14:23:55.991822683Z npm error code ERESOLVE
+2026-11-13T14:23:55.991891323Z npm error ERESOLVE could not resolve
+2026-11-13T14:23:55.991893286Z npm error
+2026-11-13T14:23:55.993076585Z npm error Found: esbuild@0.25.12
+2026-11-13T14:23:55.993080152Z npm error node_modules/esbuild
+2026-11-13T14:23:55.993081034Z npm error   dev esbuild@"^0.25.0" from the root project
+2026-11-13T14:23:55.993081796Z npm error
+2026-11-13T14:23:55.993083327Z npm error Could not resolve dependency:
+2026-11-13T14:23:55.993085257Z npm error peerOptional esbuild@"^0.27.0 || ^0.28.0" from vite@8.3.8
+2026-11-13T14:23:55.993086135Z npm error node_modules/vite
+2026-11-13T14:23:55.993086915Z npm error   vite@"^8.3.0" from the root project
+2026-11-13T14:23:55.993087671Z npm error   peer vite@"^5.2.0 || ^6 || ^7 || ^8" from @tailwindcss/vite@4.3.5
+2026-11-13T14:23:55.993088464Z npm error   node_modules/@tailwindcss/vite
+2026-11-13T14:23:55.99308919Z npm error     @tailwindcss/vite@"^4.3.3" from the root project
+2026-11-13T14:23:55.993090067Z npm error   1 more (@vitejs/plugin-react)
+2026-11-13T14:23:55.993090817Z npm error
+2026-11-13T14:23:55.99309165Z npm error Conflicting peer dependency: esbuild@0.28.2
+2026-11-13T14:23:55.993092652Z npm error node_modules/tsx/node_modules/esbuild
+2026-11-13T14:23:55.993093488Z npm error   peerOptional esbuild@"^0.27.0 || ^0.28.0" from vite@8.3.8
+2026-11-13T14:23:55.993094241Z npm error   node_modules/vite
+2026-11-13T14:23:55.993095171Z npm error     vite@"^8.3.0" from the root project
+2026-11-13T14:23:55.99309593Z npm error     peer vite@"^5.2.0 || ^6 || ^7 || ^8" from @tailwindcss/vite@4.3.5
+2026-11-13T14:23:55.993096658Z npm error     node_modules/@tailwindcss/vite
+2026-11-13T14:23:55.993097393Z npm error       @tailwindcss/vite@"^4.3.3" from the root project
+2026-11-13T14:23:55.993098098Z npm error     1 more (@vitejs/plugin-react)
+2026-11-13T14:23:55.993098866Z npm error
+2026-11-13T14:23:55.99310081Z npm error Fix the upstream dependency conflict, or retry this command with --force or --legacy-peer-deps to accept an incorrect (and potentially broken) dependency resolution.
+2026-11-13T14:23:55.993157665Z npm error
+2026-11-13T14:23:55.993167416Z npm error
+2026-11-13T14:23:55.993168723Z npm error For a full report see:
+2026-11-13T14:23:55.993169686Z npm error /opt/render/.cache/_logs/2026-11-13T14_23_52_225Z-eresolve-report.txt
+2026-11-13T14:23:55.99427317Z npm error A complete log of this run can be found in: /opt/render/.cache/_logs/2026-11-13T14_23_52_225Z-debug-0.log
+2026-11-13T14:23:56.044421894Z ==> Build failed 😞
+2026-11-13T14:23:56.044434937Z ==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
