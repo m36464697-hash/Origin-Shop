@@ -1,0 +1,384 @@
+{
+  "entities": {
+    "UserAccount": {
+      "title": "UserAccount",
+      "description": "Isolated per-account customer profile, saved shipping preferences, and personal shopping cart.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the account owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 200
+        },
+        "avatar": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "phone": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "city": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "address": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "postalCode": {
+          "type": "string",
+          "maxLength": 30
+        },
+        "cartItems": {
+          "type": "array",
+          "description": "Bounded personal cart items (max 50 items)."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "name", "email", "updatedAt"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Catalog product item managed by store admins.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "type": {
+          "type": "string",
+          "enum": ["digital", "physical"]
+        },
+        "category": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "price": {
+          "type": "number"
+        },
+        "inStock": {
+          "type": "boolean"
+        },
+        "salesCount": {
+          "type": "number"
+        },
+        "rating": {
+          "type": "number"
+        },
+        "reviewsCount": {
+          "type": "number"
+        },
+        "reviews": {
+          "type": "array"
+        }
+      },
+      "required": ["id", "name", "type", "category", "price", "inStock"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer order strictly isolated to its owning userId and store admins.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "customer": {
+          "type": "object"
+        },
+        "items": {
+          "type": "array"
+        },
+        "subtotal": {
+          "type": "number"
+        },
+        "discount": {
+          "type": "number"
+        },
+        "shippingFee": {
+          "type": "number"
+        },
+        "tax": {
+          "type": "number"
+        },
+        "total": {
+          "type": "number"
+        },
+        "paymentMethod": {
+          "type": "string",
+          "enum": ["vodafone_cash", "instapay", "fawry", "meeza", "card", "cod"]
+        },
+        "paymentStatus": {
+          "type": "string",
+          "enum": ["paid", "pending", "failed", "refunded"]
+        },
+        "orderStatus": {
+          "type": "string",
+          "enum": ["pending", "processing", "shipped", "delivered", "completed", "cancelled"]
+        },
+        "digitalDeliveries": {
+          "type": "array"
+        }
+      },
+      "required": ["id", "userId", "createdAt", "customer", "items", "total", "paymentMethod", "paymentStatus", "orderStatus"]
+    },
+    "NotificationItem": {
+      "title": "NotificationItem",
+      "description": "Account-scoped notifications including admin manual digital deliveries.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "time": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "read": {
+          "type": "boolean"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["order", "download", "shipping", "promo", "delivery"]
+        },
+        "createdAtMs": {
+          "type": "number"
+        }
+      },
+      "required": ["id", "userId", "title", "message", "read", "type"]
+    },
+    "SupportTicket": {
+      "title": "SupportTicket",
+      "description": "Account-scoped customer support conversation thread.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "customerName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "customerEmail": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["unread", "read", "replied"]
+        },
+        "replies": {
+          "type": "array"
+        }
+      },
+      "required": ["id", "userId", "customerName", "customerEmail", "subject", "message", "createdAt", "status", "replies"]
+    },
+    "Coupon": {
+      "title": "Coupon",
+      "description": "Discount coupon controlled by store admins.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "code": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 40
+        },
+        "discountType": {
+          "type": "string",
+          "enum": ["percentage", "fixed"]
+        },
+        "discountValue": {
+          "type": "number"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "usageCount": {
+          "type": "number"
+        }
+      },
+      "required": ["id", "code", "discountType", "discountValue", "active", "usageCount"]
+    },
+    "PublicStoreSettings": {
+      "title": "PublicStoreSettings",
+      "description": "Public storefront branding, shipping, contact info, and Egyptian payment instructions (excludes admin password).",
+      "type": "object",
+      "properties": {
+        "storeName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "storeTagline": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "heroBadgeText": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "heroHeadline": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "heroDescription": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "catalogTitle": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "privacyPolicyText": {
+          "type": "string",
+          "maxLength": 5000
+        },
+        "termsPolicyText": {
+          "type": "string",
+          "maxLength": 5000
+        },
+        "refundPolicyText": {
+          "type": "string",
+          "maxLength": 5000
+        }
+      },
+      "required": ["storeName"]
+    },
+    "AdminRole": {
+      "title": "AdminRole",
+      "description": "Admin role assignment document.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin"]
+        }
+      },
+      "required": ["role"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserAccount" },
+      "description": "Private user account data including profile, saved checkout fields, and shopping cart."
+    },
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Store catalog products."
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Customer purchase orders scoped strictly by userId."
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/NotificationItem" },
+      "description": "Per-user notifications and delivered digital content payloads."
+    },
+    "/tickets/{ticketId}": {
+      "schema": { "$ref": "#/entities/SupportTicket" },
+      "description": "Customer support threads scoped by userId."
+    },
+    "/coupons/{couponId}": {
+      "schema": { "$ref": "#/entities/Coupon" },
+      "description": "Promotional discount coupons."
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/PublicStoreSettings" },
+      "description": "Public store configuration (branding, contact, shipping, payment gateways)."
+    },
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/AdminRole" },
+      "description": "Authorized admin UIDs."
+    }
+  }
+}
