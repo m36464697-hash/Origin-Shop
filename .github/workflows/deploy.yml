@@ -18,18 +18,31 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Setup Node
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: "npm"
+          node-version: 22
+
       - name: Install dependencies
-        run: npm ci
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install --no-audit --no-fund
+          fi
+
       - name: Build production bundle
-        run: npm run build
-      - name: Upload artifact
+        env:
+          # أضف أي متغيرات VITE_ اختيارية هنا من GitHub Secrets/Variables عند الحاجة
+          VITE_APP_URL: ${{ vars.VITE_APP_URL }}
+        run: |
+          npm run build
+          touch dist/.nojekyll
+
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: "./dist"
